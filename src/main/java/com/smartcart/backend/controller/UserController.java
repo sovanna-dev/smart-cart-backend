@@ -1,5 +1,7 @@
 package com.smartcart.backend.controller;
 
+import com.smartcart.backend.dto.ApiResponse;
+import com.smartcart.backend.dto.LoginResponse;
 import com.smartcart.backend.model.User;
 import com.smartcart.backend.service.UserService;
 import org.springframework.http.ResponseEntity;
@@ -17,20 +19,38 @@ public class UserController {
         this.userService = userService;
     }
 
-    // Registration endpoint
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@RequestBody User user) {
-        String result = userService.registerUser(user);
-        return ResponseEntity.ok(result);
+    public ResponseEntity<ApiResponse> registerUser(@RequestBody User user) {
+        try {
+            User savedUser = userService.registerUser(user);
+            LoginResponse loginResponse = new LoginResponse(
+                savedUser.getId(),
+                savedUser.getFullName(),
+                savedUser.getPhoneNumber(),
+                savedUser.getMarketName()
+            );
+            return ResponseEntity.ok(ApiResponse.success("Registration successful", loginResponse));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
     }
 
-    // Login endpoint
     @PostMapping("/login")
-    public ResponseEntity<String> loginUser(@RequestBody Map<String, String> loginRequest) {
-        String phoneNumber = loginRequest.get("phoneNumber");
-        String password = loginRequest.get("password");
-
-        String result = userService.loginUser(phoneNumber, password);
-        return ResponseEntity.ok(result);
+    public ResponseEntity<ApiResponse> loginUser(@RequestBody Map<String, String> loginRequest) {
+        try {
+            String phoneNumber = loginRequest.get("phoneNumber");
+            String password = loginRequest.get("password");
+            
+            User user = userService.loginUser(phoneNumber, password);
+            LoginResponse loginResponse = new LoginResponse(
+                user.getId(),
+                user.getFullName(),
+                user.getPhoneNumber(),
+                user.getMarketName()
+            );
+            return ResponseEntity.ok(ApiResponse.success("Login successful", loginResponse));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
     }
 }

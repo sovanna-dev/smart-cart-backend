@@ -17,36 +17,30 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // Register a new user (with encrypted password)
-    // Register a new user
-    public String registerUser(User user) {
-    if (userRepository.existsByPhoneNumber(user.getPhoneNumber())) {
-        return "ERROR: Phone number already registered!";
+    public User registerUser(User user) {
+        if (userRepository.existsByPhoneNumber(user.getPhoneNumber())) {
+            throw new RuntimeException("Phone number already registered!");
+        }
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        return userRepository.save(user);
     }
 
-    user.setPassword(passwordEncoder.encode(user.getPassword()));
-    User savedUser = userRepository.save(user);
-    return "SUCCESS:" + savedUser.getId() + ":" + savedUser.getFullName();
-}
-
-   // Login user - returns user ID and name
-    public String loginUser(String phoneNumber, String password) {
-    Optional<User> userOptional = userRepository.findByPhoneNumber(phoneNumber);
-
-    if (userOptional.isEmpty()) {
-        return "ERROR: User not found!";
+    public User loginUser(String phoneNumber, String password) {
+        Optional<User> userOptional = userRepository.findByPhoneNumber(phoneNumber);
+        
+        if (userOptional.isEmpty()) {
+            throw new RuntimeException("User not found!");
+        }
+        
+        User user = userOptional.get();
+        
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new RuntimeException("Invalid password!");
+        }
+        
+        return user;
     }
 
-    User user = userOptional.get();
-
-    if (!passwordEncoder.matches(password, user.getPassword())) {
-        return "ERROR: Invalid password!";
-    }
-
-    // Return success with user ID and name
-    return "SUCCESS:" + user.getId() + ":" + user.getFullName();
-}
-    // Get user by ID
     public Optional<User> getUserById(Long id) {
         return userRepository.findById(id);
     }
